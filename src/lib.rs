@@ -20,27 +20,19 @@ pub struct FileHashContract {
 
 impl Default for FileHashContract {
     fn default() -> Self {
-        env::panic(b"FileHashContract should be initialized before usage")
-    }
-}
-
-impl FileHashContract {
-
-    //deploy the contract and set up the map
-
-    // #[init]
-    pub fn new() -> Self {
-        assert!(!env::state_exists(), "Already initialized");
         let this = Self {
             files: Map::new(b"u".to_vec()), // init map
         };
         this
     }
+}
+
+impl FileHashContract {
 
     // public functions
 
-    pub fn add_file(&mut self, hash: &Vec<u8>, account: &AccountId) {
-        self.files.insert(hash, account);
+    pub fn add_file(&mut self, hash: &Vec<u8>) {
+        self.files.insert(hash, &env::current_account_id());
     }
 
     pub fn get_account(&self, hash: &Vec<u8>) -> AccountId {
@@ -76,8 +68,8 @@ mod tests {
         let account = env::current_account_id();
 
         let file:Vec<u8> = vec![1, 2, 3];
-        let mut contract = FileHashContract::new();
-        contract.add_file(&file, &account);
+        let mut contract = FileHashContract::default();
+        contract.add_file(&file);
         let returned_account = contract.get_account(&file);
         
         assert_eq!(account, returned_account);
@@ -90,11 +82,10 @@ mod tests {
         testing_env!(VMContextBuilder::new()
             .current_account_id(alice())
             .finish());
-        let account = env::current_account_id(); // alice
 
         let file:Vec<u8> = vec![1, 2, 3];
-        let mut contract = FileHashContract::new();
-        contract.add_file(&file, &account);
+        let mut contract = FileHashContract::default();
+        contract.add_file(&file);
         contract.remove_file(&file);
         let returned_account = contract.get_account(&file);
         println!("check_remove: file account == {}", returned_account);
@@ -112,8 +103,8 @@ mod tests {
         let account = env::current_account_id(); // alice
 
         let file:Vec<u8> = vec![1, 2, 3];
-        let mut contract = FileHashContract::new();
-        contract.add_file(&file, &account);
+        let mut contract = FileHashContract::default();
+        contract.add_file(&file);
         // switch env context
         testing_env!(VMContextBuilder::new()
             .current_account_id(bob()) // switched current_account_id [msg.sender] to bob
